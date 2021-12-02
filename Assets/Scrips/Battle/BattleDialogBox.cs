@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class BattleDialogBox : MonoBehaviour
 {
+    [SerializeField] Color highlightColor;
     // 1秒あたりの表示時間　
     [SerializeField] int letterPerSecond;
     [SerializeField] Text dialogText;
@@ -51,5 +52,54 @@ public class BattleDialogBox : MonoBehaviour
     {
         moveSelector.SetActive(enabled);
         moveDetails.SetActive(enabled);
+    }
+    // 選択中のアクションの色を変える
+    public void UpdateActionSelection(int selectAction)
+    {
+        // selectActionが0の時はactionTexts[0]の色を青にするそれ以外は黒
+        for (int i=0; i<actionTexts.Count; i++)
+        {
+            if (selectAction == i)
+            {
+                actionTexts[i].color = highlightColor;
+            }
+            else
+            {
+                actionTexts[i].color = Color.black;
+            }
+        }
+    }
+    // 選択中のMoveの色を変える
+    public void UpdateMoveSelection(int selectMove, Move move)
+    {
+        // selectMoveが0の時はactionTexts[0]の色を青にするそれ以外は黒
+        for (int i=0; i<moveTexts.Count; i++)
+        {
+            if (selectMove == i)
+            {
+                moveTexts[i].color = highlightColor;
+            }
+            else
+            {
+                moveTexts[i].color = Color.black;
+            }
+        }
+        ppText.text = $"PP {move.PP}/{move.Base.PP}";
+        typeText.text = move.Base.Type.ToString();
+    }
+    public void SetMoveNames(List<Move> moves)
+    {
+        for (int i=0; i<moveTexts.Count; i++)
+        {
+            // 覚えている数だけ反映
+            if (i<moves.Count)
+            {
+                moveTexts[i].text = moves[i].Base.Name;
+            }
+            else
+            {
+                moveTexts[i].text = ".";
+            }
+        }
     }
 }
