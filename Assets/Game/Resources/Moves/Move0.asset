@@ -9,18 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d05f18e2ec92c43fe9a93d334257f8bf, type: 3}
-  m_Name: Hitokage
+  m_Script: {fileID: 11500000, guid: 82011287da0d443e6b078a5d38b8eab6, type: 3}
+  m_Name: Move0
   m_EditorClassIdentifier: 
-  name: 
-  description: 
-  frontSprite: {fileID: 0}
-  backSprite: {fileID: 0}
-  type1: 0
-  type2: 0
-  maxHP: 0
-  attack: 0
-  defense: 0
-  spAttack: 0
-  spDefense: 0
-  speed: 0
+  name: "\u4F53\u5F53\u305F\u308A"
+  description: "\u4F4E\u5A01\u529B"
+  type: 1
+  Power: 30
+  accuracy: 100
+  pp: 35
