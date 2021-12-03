@@ -15,6 +15,6 @@ MonoBehaviour:
   name: "\u3072\u3063\u304B\u304F"
   description: "\u4F4E\u5A01\u529B"
   type: 1
-  Power: 35
+  power: 35
   accuracy: 100
   pp: 35

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public enum BattleState
 {
@@ -19,11 +20,14 @@ public class BattleSystem : MonoBehaviour
     [SerializeField] BattleHud enemyHud;
     [SerializeField] BattleDialogBox dialogBox;
 
+    //[SerializeField] GameController gameController;
+    public UnityAction BattleOver;
+
     BattleState state;
     int currentAction; // 0:Fight, 1:Run
     int currentMove; // 0:左上, 1:右上
 
-    private void Start()
+    public void StartBattle()
     {
         StartCoroutine(SetupBattle());
     }
@@ -40,7 +44,6 @@ public class BattleSystem : MonoBehaviour
         dialogBox.SetMoveNames(playerUnit.Pokemon.Moves);
 
         yield return dialogBox.TypeDialog($"野生の {enemyUnit.Pokemon.Base.Name} が現れた。");
-        yield return new WaitForSeconds(1);
         PlayerAction();
     }
 
@@ -58,8 +61,83 @@ public class BattleSystem : MonoBehaviour
         dialogBox.EnableActionSelector(false);
         dialogBox.EnableMoveSelector(true);
     }
+
+    // PlayerMoveの実行
+    IEnumerator PerformPlayerMove()
+    {
+        state = BattleState.Busy;
+        // 技を決定
+        Move move = playerUnit.Pokemon.Moves[currentMove];
+        yield return dialogBox.TypeDialog($"{playerUnit.Pokemon.Base.Name}の{move.Base.Name}");
+        playerUnit.PlayerAttackAnimation();
+        yield return new WaitForSeconds(0.7f);
+        enemyUnit.PlayerHitAnimation();
+        // ダメージ計算
+        DamageDetails damageDetails = enemyUnit.Pokemon.TakeDamage(move, playerUnit.Pokemon);
+        // HP反映
+        yield return enemyHud.UpdateHP();
+        yield return ShowDamageDetails(damageDetails);
+        if (damageDetails.Fainted)
+        {
+            yield return dialogBox.TypeDialog($"{enemyUnit.Pokemon.Base.Name}は倒れた。");
+            enemyUnit.PlayerFaintAnimation();
+            yield return new WaitForSeconds(0.7f);
+            // gameController.EndBattle();
+            BattleOver();
+        }
+        else
+        {
+            //それ以外ならEnemyMove
+            StartCoroutine(EnemyMove());
+        }
+    }
+
+    IEnumerator EnemyMove()
+    {
+        state = BattleState.EnemyMove;
+        // 技を決定:ランダム
+        Move move = enemyUnit.Pokemon.GetRandomMove();
+        yield return dialogBox.TypeDialog($"{enemyUnit.Pokemon.Base.Name}の{move.Base.Name}");
+        enemyUnit.PlayerAttackAnimation();
+        yield return new WaitForSeconds(0.7f);
+        playerUnit.PlayerHitAnimation();
+        // ダメージ計算
+        DamageDetails damageDetails = playerUnit.Pokemon.TakeDamage(move, enemyUnit.Pokemon);
+        // HP反映
+        yield return playerHud.UpdateHP();
+        yield return ShowDamageDetails(damageDetails);
+        if (damageDetails.Fainted)
+        {
+            yield return dialogBox.TypeDialog($"{playerUnit.Pokemon.Base.Name}は倒れた。");
+            playerUnit.PlayerFaintAnimation();
+            yield return new WaitForSeconds(0.7f);
+            // gameController.EndBattle();
+            BattleOver();
+        }
+        else
+        {
+            //それ以外なら
+            PlayerAction();
+        }
+    }
+
+    IEnumerator ShowDamageDetails(DamageDetails damageDetails)
+    {
+        if (damageDetails.Critical > 1f)
+        {
+            yield return dialogBox.TypeDialog($"急所に当たった");
+        }
+        if (damageDetails.TypeEffectiveness > 1f)
+        {
+            yield return dialogBox.TypeDialog($"効果は抜群だ");
+        }
+        else if (damageDetails.TypeEffectiveness < 1f)
+        {
+            yield return dialogBox.TypeDialog($"効果は今ひとつ");
+        }
+    }
     // Zボタンを押すとMoveSelectorとMoveDetailsを表示する
-    private void Update()
+    public void HandleUpdate()
     {
         if (state == BattleState.PlayerAction)
         {
@@ -135,5 +213,12 @@ public class BattleSystem : MonoBehaviour
         }
         //色をつけてどちらを選択しているかわかるようにする
         dialogBox.UpdateMoveSelection(currentMove, playerUnit.Pokemon.Moves[currentMove]);
+
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            dialogBox.EnableMoveSelector(false);
+            dialogBox.EnableDialogText(true);
+            StartCoroutine(PerformPlayerMove());
+        }
     }
 }
