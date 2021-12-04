@@ -5,26 +5,28 @@ using UnityEngine;
 
 // レベルに応じたステータスの違うモンスターを生成するクラス
 // 注意:データのみを扱う:純粋なC#のクラス
+[System.Serializable]
 public class Pokemon
 {
+    // インスペクターからデータを設定できるようにする
+    [SerializeField] PokemonBase _base;
+    [SerializeField] int level;
     // ベースとなるデータ
-    public PokemonBase Base { get; set; }
-    public int Level { get; set; }
+    public PokemonBase Base { get => _base; }
+    public int Level { get => level; }
 
     public int HP { get; set; }
     //使える技
     public List<Move> Moves { get; set; }
 
-    // コントラクター:生成時の初期設定
-    public Pokemon(PokemonBase pBase, int pLevel)
+    // コントラクター:生成時の初期設定 => Init関数に変更
+    public void Init()
     {
-        Base = pBase;
-        Level = pLevel;
         HP = MaxHP;
 
         Moves = new List<Move>();
         // 覚える技の設定:覚える技のレベル以上ならMoveに追加
-        foreach (LearnableMove learnableMove in pBase.LearnableMoves)
+        foreach (LearnableMove learnableMove in Base.LearnableMoves)
         {
             if (Level >= learnableMove.Level)
             {
@@ -82,6 +84,15 @@ public class Pokemon
             Critical = critical,
             TypeEffectiveness = type
         };
+
+        // 特殊技の場合の修正
+        float attack = attacker.Attack;
+        float defense = Defense;
+        if (move.Base.IsSpecial)
+        {
+            attack = attacker.SpAttack;
+            defense = SpDefense;
+        }
 
         float modifiers = Random.Range(0.85f, 1f) * type * critical;
         float a = (2 * attacker.Level+10) / 250f;
