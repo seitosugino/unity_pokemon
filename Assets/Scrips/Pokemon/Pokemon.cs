@@ -18,12 +18,25 @@ public class Pokemon
     public int HP { get; set; }
     //使える技
     public List<Move> Moves { get; set; }
+    // ステータスと追加ステータス
+    public Dictionary<Stat, int> Stats { get; set; }
+    public Dictionary<Stat, int> StatBoosts { get; set; }
+    // ログを溜めておく変数を作る
+    public Queue<string> StatusChanges { get; private set; }
+
+    Dictionary<Stat, string> statDic = new Dictionary<Stat, string>()
+    {
+        {Stat.Attack, "攻撃"},
+        {Stat.Defense, "防御"},
+        {Stat.SpAttack, "特攻"},
+        {Stat.SpDefense, "特防"},
+        {Stat.Speed, "素早さ"},
+    };
 
     // コントラクター:生成時の初期設定 => Init関数に変更
     public void Init()
     {
-        HP = MaxHP;
-
+        StatusChanges = new Queue<string>();
         Moves = new List<Move>();
         // 覚える技の設定:覚える技のレベル以上ならMoveに追加
         foreach (LearnableMove learnableMove in Base.LearnableMoves)
@@ -39,32 +52,99 @@ public class Pokemon
                 break;
             }
         }
+
+        CalculateStats();
+        HP = MaxHP;
+
+        ResetStatBoost();
+    }
+
+    void ResetStatBoost()
+    {
+        StatBoosts = new Dictionary<Stat, int>()
+        {
+            {Stat.Attack, 0},
+            {Stat.Defense, 0},
+            {Stat.SpAttack, 0},
+            {Stat.SpDefense, 0},
+            {Stat.Speed, 0},
+        };
+    }
+
+    public void OnBattleOver()
+    {
+        ResetStatBoost();
+    }
+
+    void CalculateStats()
+    {
+        Stats = new Dictionary<Stat, int>();
+        MaxHP = Mathf.FloorToInt((Base.MaxHP * Level)/ 100f) + 10;
+        Stats.Add(Stat.Attack, Mathf.FloorToInt((Base.Attack * Level) / 100f) + 5);
+        Stats.Add(Stat.Defense, Mathf.FloorToInt((Base.Defense * Level) / 100f) + 5);
+        Stats.Add(Stat.SpAttack, Mathf.FloorToInt((Base.SpAttack * Level) / 100f) + 5);
+        Stats.Add(Stat.SpDefense, Mathf.FloorToInt((Base.SpDefense * Level) / 100f) + 5);
+        Stats.Add(Stat.Speed, Mathf.FloorToInt((Base.Speed * Level) / 100f) + 5);
+    }
+
+    int GetStat(Stat stat)
+    {
+        int statValue = Stats[stat];
+        int boost = StatBoosts[stat];
+        float[] boostValues = new float[] { 1, 1.5f, 2f, 2.5f, 3f, 3.5f, 4f };
+
+        if (boost >= 0)
+        {
+            // 強化
+            statValue = Mathf.FloorToInt(statValue * boostValues[boost]);
+        }
+        else
+        {
+            // 弱体化
+            statValue = Mathf.FloorToInt(statValue / boostValues[boost]);
+        }
+        return statValue;
+    }
+
+    public void ApplyBoosts(List<StatBoost> statBoosts)
+    {
+        foreach (StatBoost statBoost in statBoosts)
+        {
+            Stat stat = statBoost.stat;
+            int boost = statBoost.boost;
+            StatBoosts[stat] = Mathf.Clamp(StatBoosts[stat] + boost, -6, 6);
+            if (boost > 0)
+            {
+                StatusChanges.Enqueue($"{Base.Name}の{statDic[stat]}が上がった");
+            }
+            else
+            {
+                StatusChanges.Enqueue($"{Base.Name}の{statDic[stat]}が下がった");
+            }
+        }
     }
     // levelに応じたステータスを返すもの:プロパティ(+処理を加えることができる)
     //プロパティ
-    public int MaxHP
-    {
-        get{ return Mathf.FloorToInt((Base.MaxHP * Level)/ 100f) + 5; }
-    }
+    public int MaxHP { get; private set; }
     public int Attack
     {
-        get{ return Mathf.FloorToInt((Base.Attack * Level)/ 100f) + 5; }
+        get{ return GetStat(Stat.Attack); }
     }
     public int Defense
     {
-        get{ return Mathf.FloorToInt((Base.Defense * Level)/ 100f) + 5; }
+        get{ return GetStat(Stat.Defense); }
     }
     public int SpAttack
     {
-        get{ return Mathf.FloorToInt((Base.SpAttack * Level)/ 100f) + 5; }
+        get{ return GetStat(Stat.SpAttack); }
     }
     public int SpDefense
     {
-        get{ return Mathf.FloorToInt((Base.SpDefense * Level)/ 100f) + 5; }
+        get{ return GetStat(Stat.SpDefense); }
     }
     public int Speed
     {
-        get{ return Mathf.FloorToInt((Base.Speed * Level)/ 100f) + 10; }
+        get{ return GetStat(Stat.Speed); }
     }
 
     public DamageDetails TakeDamage(Move move, Pokemon attacker)
@@ -88,7 +168,7 @@ public class Pokemon
         // 特殊技の場合の修正
         float attack = attacker.Attack;
         float defense = Defense;
-        if (move.Base.IsSpecial)
+        if (move.Base.Category == MoveCategory.Special)
         {
             attack = attacker.SpAttack;
             defense = SpDefense;
