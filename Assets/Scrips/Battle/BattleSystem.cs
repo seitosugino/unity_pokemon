@@ -172,6 +172,17 @@ public class BattleSystem : MonoBehaviour
             yield return new WaitForSeconds(0.7f);
             CheckForBattleOver(targetUnit);
         }
+
+        sourceUnit.Pokemon.OnAfterTurn();
+        yield return ShowStatusChanges(sourceUnit.Pokemon);
+        yield return sourceUnit.Hud.UpdateHP();
+        if (sourceUnit.Pokemon.HP <= 0)
+        {
+            yield return dialogBox.TypeDialog($"{sourceUnit.Pokemon.Base.Name}は倒れた。");
+            targetUnit.PlayerFaintAnimation();
+            yield return new WaitForSeconds(0.7f);
+            CheckForBattleOver(sourceUnit);
+        }
     }
 
     IEnumerator RunMoveEffects(Move move, Pokemon source, Pokemon target)
@@ -189,6 +200,11 @@ public class BattleSystem : MonoBehaviour
                 // 相手に対してステータスを変化する
                 target.ApplyBoosts(effects.Boosts);
             }
+        }
+
+        if (effects.Status != ConditionID.None)
+        {
+            target.SetStatus(effects.Status);
         }
         yield return ShowStatusChanges(source);
         yield return ShowStatusChanges(target);
