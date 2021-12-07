@@ -25,6 +25,7 @@ public class Pokemon
     public Queue<string> StatusChanges { get; private set; }
 
     public Condition Status { get; private set; }
+    public int SleepTime { get; set; }
 
     public bool HpChange { get; set; }
 
@@ -202,7 +203,22 @@ public class Pokemon
     public void SetStatus(ConditionID conditionID)
     {
         Status = ConditionDB.Conditions[conditionID];
+        Status?.OnStart?.Invoke(this);
         StatusChanges.Enqueue($"{Base.Name}{Status.StarMessage}");
+    }
+
+    public void Curestatus()
+    {
+        Status = null;
+    }
+
+    public bool OnBeforeMove()
+    {
+        if (Status?.OnBeforeMove != null)
+        {
+            return Status.OnBeforeMove(this);
+        }
+        return true;
     }
 
     public void OnAfterTurn()

@@ -146,6 +146,13 @@ public class BattleSystem : MonoBehaviour
     // 技の実行(実行するUnit, 対象Unit, 技)
     IEnumerator RunMove(BattleUnit sourceUnit, BattleUnit targetUnit, Move move)
     {
+        bool canMove = sourceUnit.Pokemon.OnBeforeMove();
+        yield return ShowStatusChanges(sourceUnit.Pokemon);
+        if (!canMove)
+        {
+            yield break;
+        }
+
         move.PP--;
         yield return dialogBox.TypeDialog($"{sourceUnit.Pokemon.Base.Name}の{move.Base.Name}");
         sourceUnit.PlayerAttackAnimation();
