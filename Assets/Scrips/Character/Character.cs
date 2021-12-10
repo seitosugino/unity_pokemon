@@ -19,11 +19,11 @@ public class Character : MonoBehaviour
 
     public IEnumerator Move(Vector2 moveVec, UnityAction OnMoveOver = null)
     {
-        animator.MoveX = moveVec.x;
-        animator.MoveY = moveVec.y;
+        animator.MoveX = Mathf.Clamp(moveVec.x, -1f, 1f);
+        animator.MoveY = Mathf.Clamp(moveVec.y, -1f, 1f);
         Vector3 targetPos = transform.position;
         targetPos += (Vector3)moveVec;
-        if (!IsWalkable(targetPos))
+        if (!IsPathClear(targetPos))
         {
             yield break;
         }
@@ -49,10 +49,28 @@ public class Character : MonoBehaviour
         animator.IsMoving = IsMoving;
     }
 
+    bool IsPathClear(Vector3 targetPos)
+    {
+        Vector3 diff = targetPos - transform.position;
+        Vector3 dir = diff.normalized;
+        return Physics2D.BoxCast(transform.position+dir, new Vector2(0.2f, 0.2f), 0, dir, diff.magnitude-1, GameLayers.Instance.SolidObjectsLayer | GameLayers.Instance.InteractableLayer | GameLayers.Instance.PlayerLayer) == false;
+    }
+
     // targetPosに移動可能かを調べる関数
     bool IsWalkable(Vector2 targetPos)
     {
         // targetPosに半径0.2fの円のRayを飛ばしてぶつからなかった
         return !Physics2D.OverlapCircle(targetPos, 0.2f, GameLayers.Instance.SolidObjectsLayer | GameLayers.Instance.InteractableLayer);
+    }
+
+    public void LookTowards(Vector3 targetPos)
+    { 
+        float xDiff = Mathf.Floor(targetPos.x) - Mathf.Floor(transform.position.x);
+        float yDiff = Mathf.Floor(targetPos.y) - Mathf.Floor(transform.position.y);
+        if (xDiff == 0 || yDiff == 0)
+        {
+            animator.MoveX = Mathf.Clamp(xDiff, -1f, 1f);
+            animator.MoveY = Mathf.Clamp(yDiff, -1f, 1f);
+        }
     }
 }

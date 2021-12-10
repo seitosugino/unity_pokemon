@@ -6,5 +6,5 @@ using UnityEngine;
 public interface IInteractable
 {
     // 関数を宣言する
-    public void Interact();
+    public void Interact(Vector3 initiator);
 }

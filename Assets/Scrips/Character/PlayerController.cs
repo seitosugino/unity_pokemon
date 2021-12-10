@@ -51,7 +51,7 @@ public class PlayerController : MonoBehaviour
         Collider2D collider2D = Physics2D.OverlapCircle(InteractPos, 0.3f, GameLayers.Instance.InteractableLayer);
         if (collider2D)
         {
-            collider2D.GetComponent<IInteractable>()?.Interact();
+            collider2D.GetComponent<IInteractable>()?.Interact(transform.position);
         }
     }
 

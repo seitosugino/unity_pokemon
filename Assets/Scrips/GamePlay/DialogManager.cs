@@ -13,6 +13,7 @@ public class DialogManager : MonoBehaviour
 
     public UnityAction OnShowDialog;
     public UnityAction OnCloseDialog;
+    public UnityAction OnDialogFinished;
 
     public static DialogManager Instance { get; private set; }
 
@@ -25,12 +26,16 @@ public class DialogManager : MonoBehaviour
     int currentLine = 0;
     bool isTyping;
 
+    public bool IsShowing { get; private set; }
+
     // 与えられた文章を表示
-    public IEnumerator ShowDialog(Dialog dialog)
+    public IEnumerator ShowDialog(Dialog dialog, UnityAction onFnishied)
     {
         // フレーム終わりまでまつ
         yield return new WaitForEndOfFrame();
+        IsShowing = true;
         OnShowDialog?.Invoke();
+        OnDialogFinished = onFnishied;
         this.dialog = dialog;
         dialogBox.SetActive(true);
         StartCoroutine(TypeDialog(dialog.Lines[0]));
@@ -61,8 +66,10 @@ public class DialogManager : MonoBehaviour
             }
             else
             {
+                IsShowing = false;
                 currentLine = 0;
                 dialogBox.SetActive(false);
+                OnDialogFinished?.Invoke();
                 OnCloseDialog?.Invoke();
             }
         }

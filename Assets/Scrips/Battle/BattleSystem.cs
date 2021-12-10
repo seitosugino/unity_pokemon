@@ -150,34 +150,43 @@ public class BattleSystem : MonoBehaviour
         yield return ShowStatusChanges(sourceUnit.Pokemon);
         if (!canMove)
         {
+            yield return sourceUnit.Hud.UpdateHP();
             yield break;
         }
 
         move.PP--;
         yield return dialogBox.TypeDialog($"{sourceUnit.Pokemon.Base.Name}の{move.Base.Name}");
-        sourceUnit.PlayerAttackAnimation();
-        yield return new WaitForSeconds(0.7f);
-        targetUnit.PlayerHitAnimation();
 
-        // ステータス変化なら
-        if (move.Base.Category == MoveCategory.Stat)
+        if (CheakIfMoveHits(move, sourceUnit.Pokemon, targetUnit.Pokemon))
         {
-            yield return RunMoveEffects(move, sourceUnit.Pokemon, targetUnit.Pokemon);
+            sourceUnit.PlayerAttackAnimation();
+            yield return new WaitForSeconds(0.7f);
+            targetUnit.PlayerHitAnimation();
+
+            // ステータス変化なら
+            if (move.Base.Category == MoveCategory.Stat)
+            {
+                yield return RunMoveEffects(move, sourceUnit.Pokemon, targetUnit.Pokemon);
+            }
+            else
+            {
+                // ダメージ計算
+                DamageDetails damageDetails = targetUnit.Pokemon.TakeDamage(move, sourceUnit.Pokemon);
+                // HP反映
+                yield return targetUnit.Hud.UpdateHP();
+                yield return ShowDamageDetails(damageDetails);
+            }
+            if (targetUnit.Pokemon.HP <= 0)
+            {
+                yield return dialogBox.TypeDialog($"{targetUnit.Pokemon.Base.Name}は倒れた。");
+                targetUnit.PlayerFaintAnimation();
+                yield return new WaitForSeconds(0.7f);
+                CheckForBattleOver(targetUnit);
+            }
         }
         else
         {
-            // ダメージ計算
-            DamageDetails damageDetails = targetUnit.Pokemon.TakeDamage(move, sourceUnit.Pokemon);
-            // HP反映
-            yield return targetUnit.Hud.UpdateHP();
-            yield return ShowDamageDetails(damageDetails);
-        }
-        if (targetUnit.Pokemon.HP <= 0)
-        {
-            yield return dialogBox.TypeDialog($"{targetUnit.Pokemon.Base.Name}は倒れた。");
-            targetUnit.PlayerFaintAnimation();
-            yield return new WaitForSeconds(0.7f);
-            CheckForBattleOver(targetUnit);
+            yield return dialogBox.TypeDialog($"{sourceUnit.Pokemon.Base.Name}の攻撃は外れた");
         }
 
         sourceUnit.Pokemon.OnAfterTurn();
@@ -213,8 +222,38 @@ public class BattleSystem : MonoBehaviour
         {
             target.SetStatus(effects.Status);
         }
+        if (effects.VolatileStatus != ConditionID.None)
+        {
+            target.SetVolatileStatus(effects.VolatileStatus);
+        }
         yield return ShowStatusChanges(source);
         yield return ShowStatusChanges(target);
+    }
+
+    bool CheakIfMoveHits(Move move, Pokemon source, Pokemon target)
+    {
+        float moveAccuracy = move.Base.Accuracy;
+        int accracy = source.StatBoosts[Stat.Accuracy];
+        int evasion = target.StatBoosts[Stat.Evasion];
+        float[] boostValues = new float[] { 1, 4f/3f, 5f/3f, 2f, 7f/3f, 8f/3f, 3f };
+        if (accracy > 0)
+        {
+            moveAccuracy *= Mathf.FloorToInt(boostValues[accracy]);
+        }
+        else
+        {
+            moveAccuracy /= Mathf.FloorToInt(boostValues[-accracy]);
+        }
+
+        if (evasion > 0)
+        {
+            moveAccuracy /= Mathf.FloorToInt(boostValues[evasion]);
+        }
+        else
+        {
+            moveAccuracy *= Mathf.FloorToInt(boostValues[-evasion]);
+        }
+        return UnityEngine.Random.Range(1, 101) <= moveAccuracy;
     }
 
     // ステータス変化のログを表示する

@@ -25,7 +25,11 @@ public class Pokemon
     public Queue<string> StatusChanges { get; private set; }
 
     public Condition Status { get; private set; }
-    public int SleepTime { get; set; }
+    public int StatusTime { get; set; }
+
+    public Condition VolatileStatus { get; private set; }
+    public int VolatileStatusTime { get; set; }
+
 
     public bool HpChange { get; set; }
 
@@ -36,7 +40,12 @@ public class Pokemon
         {Stat.SpAttack, "特攻"},
         {Stat.SpDefense, "特防"},
         {Stat.Speed, "素早さ"},
+        {Stat.Accuracy, "命中率"},
+        {Stat.Evasion, "回避率"},
     };
+
+    // ステータス変化が起こった時に実行したいことを登録しておく
+    public System.Action OnStatusChaged;
 
     // コントラクター:生成時の初期設定 => Init関数に変更
     public void Init()
@@ -62,6 +71,8 @@ public class Pokemon
         HP = MaxHP;
 
         ResetStatBoost();
+        Status = null;
+        VolatileStatus = null;
     }
 
     void ResetStatBoost()
@@ -73,18 +84,21 @@ public class Pokemon
             {Stat.SpAttack, 0},
             {Stat.SpDefense, 0},
             {Stat.Speed, 0},
+            {Stat.Accuracy, 0},
+            {Stat.Evasion, 0},
         };
     }
 
     public void OnBattleOver()
     {
         ResetStatBoost();
+        VolatileStatus = null;
     }
 
     void CalculateStats()
     {
         Stats = new Dictionary<Stat, int>();
-        MaxHP = Mathf.FloorToInt((Base.MaxHP * Level)/ 100f) + 10;
+        MaxHP = Mathf.FloorToInt((Base.MaxHP * Level)/ 100f) + 10 + Level;
         Stats.Add(Stat.Attack, Mathf.FloorToInt((Base.Attack * Level) / 100f) + 5);
         Stats.Add(Stat.Defense, Mathf.FloorToInt((Base.Defense * Level) / 100f) + 5);
         Stats.Add(Stat.SpAttack, Mathf.FloorToInt((Base.SpAttack * Level) / 100f) + 5);
@@ -202,28 +216,63 @@ public class Pokemon
 
     public void SetStatus(ConditionID conditionID)
     {
+        if (Status != null)
+        {
+            return;
+        }
         Status = ConditionDB.Conditions[conditionID];
         Status?.OnStart?.Invoke(this);
         StatusChanges.Enqueue($"{Base.Name}{Status.StarMessage}");
+
+        OnStatusChaged?.Invoke();
     }
 
-    public void Curestatus()
+    public void CureStatus()
+    {
+        Status = null;
+        OnStatusChaged?.Invoke();
+    }
+
+    public void SetVolatileStatus(ConditionID conditionID)
+    {
+        if (Status != null)
+        {
+            return;
+        }
+        VolatileStatus = ConditionDB.Conditions[conditionID];
+        VolatileStatus?.OnStart?.Invoke(this);
+        StatusChanges.Enqueue($"{Base.Name}{VolatileStatus.StarMessage}");
+    }
+
+    public void CureVolatileStatus()
     {
         Status = null;
     }
 
     public bool OnBeforeMove()
     {
+        bool canRunMove = true;
         if (Status?.OnBeforeMove != null)
         {
-            return Status.OnBeforeMove(this);
+            if (Status.OnBeforeMove(this) == false)
+            {
+                canRunMove = false;
+            }
         }
-        return true;
+        if (VolatileStatus?.OnBeforeMove != null)
+        {
+            if (VolatileStatus.OnBeforeMove(this) == false)
+            {
+                canRunMove = false;
+            }
+        }
+        return canRunMove;
     }
 
     public void OnAfterTurn()
     {
         Status?.OnAfterTurn?.Invoke(this);
+        VolatileStatus?.OnAfterTurn?.Invoke(this);
     }
 }
 
