@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 
 // レベルに応じたステータスの違うモンスターを生成するクラス
@@ -16,8 +17,9 @@ public class Pokemon
     public int Level { get => level; }
 
     public int HP { get; set; }
-    //使える技
+    // 使える技
     public List<Move> Moves { get; set; }
+    public Move CurrentMove { get; set; }
     // ステータスと追加ステータス
     public Dictionary<Stat, int> Stats { get; set; }
     public Dictionary<Stat, int> StatBoosts { get; set; }
@@ -120,7 +122,7 @@ public class Pokemon
         else
         {
             // 弱体化
-            statValue = Mathf.FloorToInt(statValue / boostValues[boost]);
+            statValue = Mathf.FloorToInt(statValue / boostValues[-boost]);
         }
         return statValue;
     }
@@ -210,7 +212,8 @@ public class Pokemon
 
     public Move GetRandomMove()
     {
-        int r =Random.Range(0, Moves.Count);
+        List<Move> movesWithPP = Moves.Where(x => x.PP > 0).ToList();
+        int r =Random.Range(0, movesWithPP.Count);
         return Moves[r];
     }
 

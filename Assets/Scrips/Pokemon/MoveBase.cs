@@ -14,7 +14,9 @@ public class MoveBase : ScriptableObject
     [SerializeField] PokemonType type;
     [SerializeField] int power;
     [SerializeField] int accuracy; //命中
+    [SerializeField] bool anyHit;
     [SerializeField] int pp;
+    [SerializeField] int priority;
 
     // カテゴリー(物理/特殊/ステータス変化)
     [SerializeField] MoveCategory category;
@@ -22,6 +24,7 @@ public class MoveBase : ScriptableObject
     [SerializeField] MoveTarget target;
     // ステータス変化のリスト:どのステータスwpどの程度変化させるか
     [SerializeField] MoveEffects effects;
+    [SerializeField] List<SecondaryEffects> secondaries;
 
     // 他のファイル(Move.cs)から参照する為にプロパティを使う
     public string Name{　get => name; }
@@ -33,7 +36,9 @@ public class MoveBase : ScriptableObject
     public MoveCategory Category { get => category; }
     public MoveTarget Target { get => target; }
     public MoveEffects Effects { get => effects; }
-
+    public List<SecondaryEffects> Secondaries { get => secondaries; }
+    public int Priority { get => priority; }
+    public bool AnyHit { get => anyHit; }
 }
 
 public enum MoveCategory
@@ -58,6 +63,16 @@ public class MoveEffects
     public List<StatBoost> Boosts { get => boosts; }
     public ConditionID Status { get => status; }
     public ConditionID VolatileStatus { get => volatileStatus; }
+}
+
+[System.Serializable]
+public class SecondaryEffects : MoveEffects
+{
+    [SerializeField] int chance;
+    [SerializeField] MoveTarget target;
+
+    public int Chance { get => chance; }
+    public MoveTarget Target { get => target; }
 }
 
 [System.Serializable]
