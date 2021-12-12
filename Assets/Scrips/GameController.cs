@@ -7,6 +7,7 @@ public enum GameState
     FreeRoam, // マップ移動
     Battle,
     Dialog,
+    CutScene,
 }
 
 public class GameController : MonoBehaviour
@@ -16,14 +17,33 @@ public class GameController : MonoBehaviour
     [SerializeField] BattleSystem battleSystem;
     [SerializeField] Camera worldCamera;
 
+    public static GameController Instance { get; private set; }
+
     GameState state = GameState.FreeRoam;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
         playerController.OnEncounted += StartBattle;
         battleSystem.OnBattleOver += EndBattle;
+        playerController.OnEnterrTrainersView += TriggerTrainerBattle;
+
         DialogManager.Instance.OnShowDialog += ShowDialog;
         DialogManager.Instance.OnCloseDialog += CloseDialog;
+    }
+
+    void TriggerTrainerBattle(Collider2D trainerCollider2D)
+    {
+        TrainerController trainer = trainerCollider2D.GetComponentInParent<TrainerController>();
+        if (trainer)
+        {
+            state = GameState.CutScene;
+            StartCoroutine(trainer.TriggerTrainerBattle(playerController));
+        }
     }
 
     void ShowDialog()
@@ -49,6 +69,16 @@ public class GameController : MonoBehaviour
         // FindObjectOfType:シーンないから一致するコンポーネントを1つ取得する
         Pokemon wildPokemon = FindObjectOfType<MapArea>().GetRandomWildPokemon();
         battleSystem.StartBattle(playerParty, wildPokemon);
+    }
+
+    public void StartTrainerBattle(TrainerController trainer)
+    {
+        state = GameState.Battle;
+        battleSystem.gameObject.SetActive(true);
+        worldCamera.gameObject.SetActive(false);
+        PokemonParty playerParty = playerController.GetComponent<PokemonParty>();
+        PokemonParty trainerParty = trainer.GetComponent<PokemonParty>();
+        battleSystem.StartTrainerBattle(playerParty, trainerParty);
     }
 
     public void EndBattle()

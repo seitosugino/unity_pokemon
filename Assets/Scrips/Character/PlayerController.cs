@@ -10,7 +10,12 @@ public class PlayerController : MonoBehaviour
     Character character;
 
     public UnityAction OnEncounted;
-    //[SerializeField] GameController gameController;
+    public UnityAction<Collider2D> OnEnterrTrainersView;
+
+    [SerializeField] new string name;
+    [SerializeField] Sprite sprite;
+    public string Name { get => name; }
+    public Sprite Sprite { get => sprite; }
 
     private void Awake()
     {
@@ -30,7 +35,7 @@ public class PlayerController : MonoBehaviour
 
             if (input != Vector2.zero)
             {
-                StartCoroutine(character.Move(input, CheckForEncounters));
+                StartCoroutine(character.Move(input, OnMoveOver));
             }
         }
         character.HandleUpdate();
@@ -55,6 +60,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void OnMoveOver()
+    {
+        CheckForEncounters();
+        CheckIfTrainerView();
+    }
+
     // 円のRayを飛ばして草むらLayerに当たったらエンカウント
     void CheckForEncounters()
     {
@@ -68,6 +79,17 @@ public class PlayerController : MonoBehaviour
                 OnEncounted();
                 character.Animator.IsMoving = false;
             }
+        }
+    }
+
+    void CheckIfTrainerView()
+    {
+        Collider2D trainerCollider2D = Physics2D.OverlapCircle(transform.position, 0.2f, GameLayers.Instance.FovLayer);
+        if (trainerCollider2D)
+        {
+            Debug.Log("トレーナーの視界に入った");
+            character.Animator.IsMoving = false;
+            OnEnterrTrainersView?.Invoke(trainerCollider2D);
         }
     }
 }

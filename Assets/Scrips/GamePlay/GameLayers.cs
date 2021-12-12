@@ -10,6 +10,7 @@ public class GameLayers : MonoBehaviour
     // 草むら判定のLayer
     [SerializeField] LayerMask longGrassLayer;
     [SerializeField] LayerMask playerLayer;
+    [SerializeField] LayerMask fovLayer;
 
     // どこからでも利用可能
     public static GameLayers Instance { get; set; }
@@ -23,4 +24,5 @@ public class GameLayers : MonoBehaviour
     public LayerMask InteractableLayer { get => interactableLayer; }
     public LayerMask LongGrassLayer { get => longGrassLayer; }
     public LayerMask PlayerLayer { get => playerLayer; }
+    public LayerMask FovLayer { get => fovLayer; }
 }

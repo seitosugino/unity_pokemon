@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Events;
 
 public enum BattleState
@@ -28,6 +29,8 @@ public class BattleSystem : MonoBehaviour
     [SerializeField] BattleUnit enemyUnit;
     [SerializeField] BattleDialogBox dialogBox;
     [SerializeField] PartyScreen partyScreen;
+    [SerializeField] Image playerImage;
+    [SerializeField] Image trainerImage;
 
     //[SerializeField] GameController gameController;
     public UnityAction OnBattleOver;
@@ -40,11 +43,21 @@ public class BattleSystem : MonoBehaviour
 
     PokemonParty playerParty;
     Pokemon wildPokemon;
+
     public void StartBattle(PokemonParty playerParty, Pokemon wildPokemon)
     {
         this.playerParty = playerParty;
         this.wildPokemon = wildPokemon;
         StartCoroutine(SetupBattle());
+    }
+
+    public void StartTrainerBattle(PokemonParty playerParty, PokemonParty trainerParty)
+    {
+        this.playerParty = playerParty;
+        Debug.Log("1");
+        playerImage.sprite = playerParty.GetComponent<PlayerController>().Sprite;
+        trainerImage.sprite = trainerParty.GetComponent<TrainerController>().Sprite;
+        //StartCoroutine(SetupBattle());
     }
 
     IEnumerator SetupBattle()
