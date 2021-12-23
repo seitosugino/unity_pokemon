@@ -40,8 +40,14 @@ public class BattleUnit : MonoBehaviour
             image.sprite = Pokemon.Base.FrontSprite;
         }
         hud.SetData(pokemon);
+        hud.gameObject.SetActive(true);
         image.color = originalColor;
         PlayerEnterAnimation();
+    }
+
+    public void Clear()
+    {
+        hud.gameObject.SetActive(false);
     }
 
     // 登場
@@ -71,7 +77,7 @@ public class BattleUnit : MonoBehaviour
     {
         Sequence sequence = DOTween.Sequence();
         sequence.Append(image.DOColor(Color.gray, 0.1f));
-         sequence.Append(image.DOColor(originalColor, 0.1f));
+        sequence.Append(image.DOColor(originalColor, 0.1f));
     }
     // 戦闘不能
     public void PlayerFaintAnimation()

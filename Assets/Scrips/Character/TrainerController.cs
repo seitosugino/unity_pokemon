@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TrainerController : MonoBehaviour
+public class TrainerController : MonoBehaviour, IInteractable
 {
     [SerializeField] new string name;
     [SerializeField] Sprite sprite;
@@ -63,5 +63,11 @@ public class TrainerController : MonoBehaviour
                 break;
         }
         fov.transform.eulerAngles = new Vector3(0, 0, angle);
+    }
+
+    public void Interact(Vector3 initiator)
+    {
+        character.LookTowards(initiator);
+        StartCoroutine(DialogManager.Instance.ShowDialog(dialog, StartBattle));
     }
 }
