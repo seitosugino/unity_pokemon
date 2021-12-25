@@ -8,9 +8,11 @@ public class TrainerController : MonoBehaviour, IInteractable
     [SerializeField] Sprite sprite;
     [SerializeField] GameObject exclamation;
     [SerializeField] Dialog dialog;
+    [SerializeField] Dialog dialogAfterBattle;
     [SerializeField] GameObject fov;
 
     Character character;
+    bool battleLost;
 
     public string Name { get => name; }
     public Sprite Sprite { get => sprite; }
@@ -65,9 +67,22 @@ public class TrainerController : MonoBehaviour, IInteractable
         fov.transform.eulerAngles = new Vector3(0, 0, angle);
     }
 
+    public void BattleLost()
+    {
+        battleLost = true;
+        fov.SetActive(false);
+    }
+
     public void Interact(Vector3 initiator)
     {
         character.LookTowards(initiator);
-        StartCoroutine(DialogManager.Instance.ShowDialog(dialog, StartBattle));
+        if (battleLost)
+        {
+            StartCoroutine(DialogManager.Instance.ShowDialog(dialogAfterBattle));
+        }
+        else
+        {
+            StartCoroutine(DialogManager.Instance.ShowDialog(dialog, StartBattle));
+        }
     }
 }

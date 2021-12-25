@@ -17,6 +17,8 @@ public class GameController : MonoBehaviour
     [SerializeField] BattleSystem battleSystem;
     [SerializeField] Camera worldCamera;
 
+    TrainerController trainer;
+
     public static GameController Instance { get; private set; }
 
     GameState state = GameState.FreeRoam;
@@ -62,6 +64,7 @@ public class GameController : MonoBehaviour
     public void StartBattle()
     {
         state = GameState.Battle;
+        trainer = null;
         battleSystem.gameObject.SetActive(true);
         worldCamera.gameObject.SetActive(false);
         // パーティと野生ポケモンの取得
@@ -74,6 +77,7 @@ public class GameController : MonoBehaviour
     public void StartTrainerBattle(TrainerController trainer)
     {
         state = GameState.Battle;
+        this.trainer = trainer;
         battleSystem.gameObject.SetActive(true);
         worldCamera.gameObject.SetActive(false);
         PokemonParty playerParty = playerController.GetComponent<PokemonParty>();
@@ -83,6 +87,10 @@ public class GameController : MonoBehaviour
 
     public void EndBattle()
     {
+        if (trainer)
+        {
+            trainer.BattleLost();
+        }
         state = GameState.FreeRoam;
         battleSystem.gameObject.SetActive(false);
         worldCamera.gameObject.SetActive(true);

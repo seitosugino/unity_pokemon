@@ -157,7 +157,8 @@ public class BattleSystem : MonoBehaviour
                 }
                 else
                 {
-                    StartCoroutine(SendNextTrainerPokemon(nextPokemon));
+                    dialogBox.EnableChoiceBox(true);
+                    //StartCoroutine(SendNextTrainerPokemon(nextPokemon));
                 }
             }
             else

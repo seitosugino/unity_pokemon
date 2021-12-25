@@ -20,6 +20,10 @@ public class BattleDialogBox : MonoBehaviour
     [SerializeField] Text ppText;
     [SerializeField] Text typeText;
 
+    [SerializeField] GameObject choiceBox;
+    [SerializeField] Text yesText;
+    [SerializeField] Text noText;
+
     //Textを変更するための関数
     public void SetDialog(string dialog)
     {
@@ -55,6 +59,12 @@ public class BattleDialogBox : MonoBehaviour
         moveSelector.SetActive(enabled);
         moveDetails.SetActive(enabled);
     }
+
+    public void EnableChoiceBox(bool enabled)
+    {
+        choiceBox.SetActive(enabled);
+    }
+
     // 選択中のアクションの色を変える
     public void UpdateActionSelection(int selectAction)
     {
@@ -97,6 +107,22 @@ public class BattleDialogBox : MonoBehaviour
             ppText.color = Color.black;
         }
     }
+
+    // 選択中のアクションの色を変える
+    public void UpdateChoiceBox(bool yesSelected)
+    {
+        if (yesSelected)
+        {
+            yesText.color = highlightColor;
+            noText.color = Color.black;
+        }
+        else
+        {
+            yesText.color = Color.black;
+            noText.color = highlightColor;
+        }
+    }
+
     public void SetMoveNames(List<Move> moves)
     {
         for (int i=0; i<moveTexts.Count; i++)

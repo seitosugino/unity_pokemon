@@ -29,7 +29,7 @@ public class DialogManager : MonoBehaviour
     public bool IsShowing { get; private set; }
 
     // 与えられた文章を表示
-    public IEnumerator ShowDialog(Dialog dialog, UnityAction onFnishied)
+    public IEnumerator ShowDialog(Dialog dialog, UnityAction onFnishied = null)
     {
         // フレーム終わりまでまつ
         yield return new WaitForEndOfFrame();
