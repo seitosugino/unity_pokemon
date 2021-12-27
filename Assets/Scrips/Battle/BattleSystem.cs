@@ -13,6 +13,7 @@ public enum BattleState
     Busy,
     PartyScreen,
     BattleOver,
+    AboutToUse,
 }
 
 public enum BattleAction
@@ -40,6 +41,7 @@ public class BattleSystem : MonoBehaviour
     int currentAction; // 0:Fight, 1:Bag
     int currentMove; // 0:左上, 1:右上
     int currentMember;
+    bool aboutToUse;
 
     PokemonParty playerParty;
     PokemonParty trainerParty;
@@ -131,6 +133,14 @@ public class BattleSystem : MonoBehaviour
         partyScreen.SetPartyData(playerParty.Pokemons);
     }
 
+    IEnumerator AboutToUse(Pokemon newPokemon)
+    {
+        state = BattleState.Busy;
+        yield return dialogBox.TypeDialog($"{trainer.Name}が{newPokemon.Base.Name}を出そうとしているモンスターを入れ替えますか?");
+        dialogBox.EnableChoiceBox(true);
+        state = BattleState.AboutToUse;
+    }
+
     // faintedUnit:やられたモンスター
     void CheckForBattleOver(BattleUnit faintedUnit)
     {
@@ -157,8 +167,7 @@ public class BattleSystem : MonoBehaviour
                 }
                 else
                 {
-                    dialogBox.EnableChoiceBox(true);
-                    //StartCoroutine(SendNextTrainerPokemon(nextPokemon));
+                    StartCoroutine(AboutToUse(nextPokemon));
                 }
             }
             else
@@ -173,6 +182,7 @@ public class BattleSystem : MonoBehaviour
         state = BattleState.BattleOver;
         playerParty.Pokemons.ForEach(p => p.OnBattleOver());
         OnBattleOver();
+        isTrainerBattle = false;
     }
 
     IEnumerator RunTurns(BattleAction battleAction)
@@ -439,6 +449,37 @@ public class BattleSystem : MonoBehaviour
         {
             HandlePartySelection();
         }
+        else if (state == BattleState.AboutToUse)
+        {
+            HandleAboutToUse();
+        }
+    }
+
+    void HandleAboutToUse()
+    {
+        if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            aboutToUse = !aboutToUse;
+        }
+        dialogBox.UpdateChoiceBox(aboutToUse);
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            dialogBox.EnableChoiceBox(false);
+            if (aboutToUse)
+            {
+                preState = BattleState.AboutToUse;
+                OpenPartyAction();
+            }
+            else
+            {
+                StartCoroutine(SendNextTrainerPokemon());
+            }
+        }
+        else if (Input.GetKeyDown(KeyCode.X))
+        {
+            dialogBox.EnableChoiceBox(false);
+            StartCoroutine(SendNextTrainerPokemon());
+        }
     }
 
     // PlayerActionでの行動を処理する
@@ -582,9 +623,22 @@ public class BattleSystem : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.X))
         {
+            if (playerUnit.Pokemon.HP <= 0)
+            {
+                partyScreen.SetMessage("入れ替えるポケモンを選んでください");
+                return;
+            }
             // 戻る
             partyScreen.gameObject.SetActive(false);
-            ActionSelection();
+            if (preState == BattleState.AboutToUse)
+            {
+                preState = null;
+                StartCoroutine(SendNextTrainerPokemon());
+            }
+            else
+            {
+                ActionSelection();
+            }
         }
     }
 
@@ -603,13 +657,22 @@ public class BattleSystem : MonoBehaviour
         playerUnit.Setup(newPokemon);
         dialogBox.SetMoveNames(playerUnit.Pokemon.Moves);
         yield return dialogBox.TypeDialog($"ゆけっ! {playerUnit.Pokemon.Base.Name} !");
-        state = BattleState.RunningTurn;
+        if (preState == null)
+        {
+            state = BattleState.RunningTurn;
+        }
+        else if (preState == BattleState.AboutToUse)
+        {
+            preState = null;
+            StartCoroutine(SendNextTrainerPokemon());
+        }
     }
 
-    IEnumerator SendNextTrainerPokemon(Pokemon nextPokemon)
+    IEnumerator SendNextTrainerPokemon()
     {
         state = BattleState.Busy;
         // 新しいのを出す
+        Pokemon nextPokemon = trainerParty.GetHealthyPokemon();
         enemyUnit.Setup(nextPokemon);
         yield return dialogBox.TypeDialog($"{trainer.Name}は{nextPokemon.Base.Name}を出してきた!");
         state = BattleState.RunningTurn;
